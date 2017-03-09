@@ -21,6 +21,7 @@ pub const SCREEN_HEIGHT: u32 = 600;
 pub const TARGET_FPS:    u32 = 60;
 pub const TIME_PER_TICK: f64 = 1. / (TARGET_FPS as f64);
 
+pub const TURN_SPEED: f64 = 1.;
 
 struct WorldState {
     time: f64,
@@ -41,6 +42,9 @@ struct Input {
     move_right:   bool,
     move_forward: bool,
     move_back:    bool,
+
+    turn_right: bool,
+    turn_left:  bool,
 }
 
 
@@ -86,9 +90,9 @@ fn init<S: Screen>(renderer: &mut Renderer<S>)
         let mut objects = Vec::new();
 
         objects.push({
-            Object::from_file("res/floor.obj")?
-                .scaled(10., 1., 10.)
-                .translated(pt![0., 20., -20.])
+            Object::from_file("res/cube.obj")?
+                .scaled(3., 3., 3.)
+                .translated(pt![0., 0., -20.])
         });
 
         objects
@@ -126,6 +130,8 @@ fn parse_event(
                 SdlKeycode::A => input.move_left    = true,
                 SdlKeycode::S => input.move_back    = true,
                 SdlKeycode::D => input.move_right   = true,
+                SdlKeycode::Q => input.turn_right   = true,
+                SdlKeycode::E => input.turn_left    = true,
                 _ => {}
             }
         },
@@ -136,6 +142,8 @@ fn parse_event(
                 SdlKeycode::A => input.move_left    = false,
                 SdlKeycode::S => input.move_back    = false,
                 SdlKeycode::D => input.move_right   = false,
+                SdlKeycode::Q => input.turn_right   = false,
+                SdlKeycode::E => input.turn_left    = false,
                 _ => {}
             }
         },
@@ -151,16 +159,23 @@ fn update(world_state: &mut WorldState) -> bool {
     let ref mut camera = world_state.camera;
     let th = camera.heading;
     if world_state.input.move_left {
-        camera.pos = camera.pos + pt![-th.cos(), 0.,  th.sin()];
+        camera.pos = camera.pos + pt![-th.cos(), 0., -th.sin()];
     }
     if world_state.input.move_right {
-        camera.pos = camera.pos + pt![ th.cos(), 0., -th.sin()];
+        camera.pos = camera.pos + pt![ th.cos(), 0.,  th.sin()];
     }
     if world_state.input.move_forward {
         camera.pos = camera.pos + pt![-th.sin(), 0., -th.cos()];
     }
     if world_state.input.move_back {
         camera.pos = camera.pos + pt![ th.sin(), 0.,  th.cos()];
+    }
+
+    if world_state.input.turn_left {
+        camera.heading += TIME_PER_TICK * TURN_SPEED
+    }
+    if world_state.input.turn_right {
+        camera.heading -= TIME_PER_TICK * TURN_SPEED
     }
 
     true
@@ -176,6 +191,7 @@ fn render<S: Screen>(
     for obj in &world_state.objects {
         obj.clone()
             .translated(-world_state.camera.pos)
+            .rotated_y(world_state.camera.heading)
             .render(renderer);
     }
     try!(renderer.display());
