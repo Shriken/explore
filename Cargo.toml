@@ -4,5 +4,5 @@ version = "0.1.0"
 authors = ["Zane Sterling <sterling.zane@gmail.com>"]
 
 [dependencies]
-rusterize = "0.3.1"
+rusterize = ">=0.3.7"
 sdl2 = "0.29"
