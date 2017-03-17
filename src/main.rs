@@ -21,7 +21,8 @@ pub const SCREEN_HEIGHT: u32 = 600;
 pub const TARGET_FPS:    u32 = 60;
 pub const TIME_PER_TICK: f64 = 1. / (TARGET_FPS as f64);
 
-pub const TURN_SPEED: f64 = 1.;
+pub const MOVE_SPEED: f64 = 0.2;
+pub const TURN_SPEED: f64 = 2.;
 
 struct WorldState {
     time: f64,
@@ -159,16 +160,16 @@ fn update(world_state: &mut WorldState) -> bool {
     let ref mut camera = world_state.camera;
     let th = camera.heading;
     if world_state.input.move_left {
-        camera.pos = camera.pos + pt![-th.cos(), 0., -th.sin()];
+        camera.pos = camera.pos + pt![-th.cos(), 0., -th.sin()] * MOVE_SPEED;
     }
     if world_state.input.move_right {
-        camera.pos = camera.pos + pt![ th.cos(), 0.,  th.sin()];
+        camera.pos = camera.pos + pt![ th.cos(), 0.,  th.sin()] * MOVE_SPEED;
     }
     if world_state.input.move_forward {
-        camera.pos = camera.pos + pt![-th.sin(), 0., -th.cos()];
+        camera.pos = camera.pos + pt![ th.sin(), 0., -th.cos()] * MOVE_SPEED;
     }
     if world_state.input.move_back {
-        camera.pos = camera.pos + pt![ th.sin(), 0.,  th.cos()];
+        camera.pos = camera.pos + pt![-th.sin(), 0.,  th.cos()] * MOVE_SPEED;
     }
 
     if world_state.input.turn_left {
@@ -188,11 +189,10 @@ fn render<S: Screen>(
     -> Result<(), Box<error::Error>>
 {
     renderer.clear();
+    let camera_transform = Transform::rotate_y(world_state.camera.heading)
+        * Transform::translate(-world_state.camera.pos);
     for obj in &world_state.objects {
-        obj.clone()
-            .translated(-world_state.camera.pos)
-            .rotated_y(world_state.camera.heading)
-            .render(renderer);
+        obj.render_with_transform(renderer, camera_transform);
     }
     try!(renderer.display());
     Ok(())
